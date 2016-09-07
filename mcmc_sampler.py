@@ -12,7 +12,7 @@ def next(x):
     """The proposal density is a normal distribution of width 1, centered
     around the sample with higher probability between the current and
     the previous."""
-    return (np.random.normal(loc=x,scale=1))
+    return (np.random.normal(loc=x,scale=5))
 
 def markov_chain():
     x0  = 0; x1  = next(x0)      #Starting point
@@ -31,13 +31,13 @@ def markov_chain():
         tmp = x1
         x1 = next(x0)
         x0 = tmp
-
+    print('Mean acceptance ratio:%f\n'%np.mean(a))
     return x
 
 f,ax = plt.subplots(1,1)
 ax.hist(markov_chain(),bins=np.linspace(0,10,21))
-ax.xlabel('x')
-ax.ylabel('Frequency')
+ax.set_xlabel('x')
+ax.set_ylabel('Frequency')
 #ax.plot(x)
 
 plt.show()
