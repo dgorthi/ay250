@@ -1,8 +1,12 @@
-## My own Metropolis-Hastings algorithm, which is tested by sampling
-## from a one dimensional Gaussian distribution.
+## A Metropolis-Hastings algorithm, which is tested by sampling from a
+## one dimensional Gaussian distribution.
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.mlab as mlab
+import seaborn as sns
+
+sns.set_style("whitegrid")
+sns.set_context("notebook",font_scale=2)
 
 def lnP(mu,sigma,x):
     """The posterior distribution from which samples will be drawn.
@@ -11,7 +15,7 @@ def lnP(mu,sigma,x):
     return (-0.5*(mu-x)**2/sigma**2)
 
 def next(x):
-    """The proposal density is a normal distribution of width 5
+    """The proposal density is a normal distribution of width 3
     (determined by hit and trial for this particular problem),
     centered around the sample with higher probability between the
     current and the previous.
@@ -23,8 +27,8 @@ def markov_chain():
     """Generates a markov chain to sample a given log likelihood function.
 
     """
-    x0  = np.random.rand(1); x1  = next(x0)      #Starting point
-    x,a = np.array([]),np.array([])
+    x0  = 0; x1  = next(x0)                      #Starting point
+    x,a = np.array([]),np.array([])              #markov-chain and acceptance rate
     
     for i in range(10**4):
         x1 = next(x0)
@@ -37,26 +41,30 @@ def markov_chain():
             x = np.append(x,x1)
         else:
             x = np.append(x,x0)
-    print('Scale:%d\tMean acceptance ratio:%f\n'%(4,np.mean(a)))
+    print('Mean acceptance ratio:%f\n'%np.mean(a))
     return x
 
 x = markov_chain()
 y = lnP(5,1,x)
 
-f1,(ax1,ax2) = plt.subplots(2,1,sharex=True)
-hist=ax1.hist(x,bins=100)
-bins=(hist[1][1:]+hist[1][:-1])/2
-ax1.plot(bins,mlab.normpdf(bins,5,1))
-ax1.set_ylabel('Frequency')
+#Diagnostic plots
+f1,(ax1,ax2) = plt.subplots(1,2)
+ax1.plot(y)
+ax1.set_xlabel('Step Number')
+ax1.set_ylabel('LnP(x)')
 
-ax2.plot(x,y,'.')
+ax2.hist(x,bins=100)
+ax2.set_ylabel('Frequency')
 ax2.set_xlabel('x')
-ax2.set_ylabel('LnP(x)')
 
+x_true= np.linspace(0,10,1000)
+y_true= np.log(mlab.normpdf(x_true,5,1))
 f2,ax3 = plt.subplots(1,1)
-ax3.plot(y)
-ax3.set_xlabel('Step Number')
-ax3.set_ylabel('Ln(P)')
+ax3.plot(x,y,'.',label='Log likelihood')
+ax3.plot(x_true,y_true,label='True Distribution')
+ax3.set_xlabel('x')
+ax3.set_ylabel('LnP(x)')
+ax3.legend()
 
 plt.show()
 

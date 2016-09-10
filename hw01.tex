@@ -17,13 +17,19 @@
 
 \noindent \textbf{Problem 1.} \\ 
 
-(a) In 1995, they introduced blue M\&M's.  Before then, the color mix in a bag of plain M\&M's was 30\% brown, 20\% yellow, 20\% red, 10\% green, 10\% orange, and 10\% tan.  Afterward, it was 24\% blue, 20\% green, 16\% orange, 14\% yellow, 13\% red, 13\% brown.
+(a) In 1995, they introduced blue M\&M's.  Before then, the color mix
+in a bag of plain M\&M's was 30\% brown, 20\% yellow, 20\% red, 10\%
+green, 10\% orange, and 10\% tan.  Afterward, it was 24\% blue, 20\%
+green, 16\% orange, 14\% yellow, 13\% red, 13\% brown.
 
-Suppose there are two bags of M\&M's, one from 1994 and one from 1996 and you are randomly given one M\&M from each bag.  One is yellow, one is green.  Using Bayes's theorem and a probability table to determine the \underline{relative} probability that the yellow M\&M came from the 1994 bag. \\
+Suppose there are two bags of M\&M's, one from 1994 and one from 1996
+and you are randomly given one M\&M from each bag.  One is yellow, one
+is green.  Using Bayes's theorem and a probability table to determine
+the \underline{relative} probability that the yellow M\&M came from
+the 1994 bag. \\
 
-(b) Evaluate the ``Evidence'' and determine the \underline{normalized} probability that the yellow M\&M came from the 1994 bag. \\
-
-\noindent \textit{Hint: This is similar to how we wrote out the Monty Hall problem in class.} \\
+(b) Evaluate the ``Evidence'' and determine the \underline{normalized}
+probability that the yellow M\&M came from the 1994 bag. \\
 
 \noindent \textbf{Solution:} \\
 
@@ -68,12 +74,11 @@ Other & 0.1 & 0.24 \\
 Given data: One M\&M was drawn from each sample and one of them is
 yellow and another green. To evaluate the relative probablity that the
 yellow M\&M was drawn from the 1994 bag (and hence the green from the
-1996 bag), define the two hypothesis as:
+1996 bag), define the two hypothesis as:\\
 
-\noindent$H_1$: The yellow M\&M is drawn from the 1994 bag and the green M\&M from the
-1996 bag.
-\noindent$H_2$: The yellow M\&M is drawn from the 1996 bag and the green M\&M from the
-1994 bag.
+\noindent$H_1$: Yellow M\&M- 1994 bag, Green M\&M- 1996 bag.\\
+
+\noindent$H_2$: Yellow M\&M- 1996 bag, Green M\&M- 1994 bag.\\
 
 Since we have no prior knowledge about either hypothesis, we should
 begin with flat priors- either hypothesis is equally likely. For
@@ -109,24 +114,25 @@ $H_2$ & 1/2 & (0.14)*(0.1) & 0.007 \\
 The relative probability that the yellow M\&M was drawn from the 1994
 bag is \fbox{0.02}.\\
 
-\noindent(b) The `evidence' is also the probability of the data given all the
-possible hypotheses. This can be obtained by summing over the
+\noindent(b) The `evidence' is also the probability of the data given
+all the possible hypotheses. This can be obtained by summing over the
 likelihoods of all the hypotheses.
 \begin{equation}
   P(D) = 0.02+0.007 = 0.027
 \end{equation}
 
-\noindent Hence the normalized probability that the yellow M\&M came from the
-1994 bag is:
+\noindent Hence the normalized probability that the yellow M\&M came
+from the 1994 bag is:
 
 \begin{equation}
-  P(H_1|D) = \frac{P(D|H_1)*P(H_1)}{P(D)} = \frac{0.02}{0.027} \sim 74\%
+  P(H_1|D) = \frac{P(D|H_1)*P(H_1)}{P(D)} = \frac{0.02}{0.027} \sim
+  74\%
 \end{equation}
 
 The normalized probability of our hypothesis that the yellow M\&M was
 drawn from the 1994 bag is \fbox{74\%}.
 
-
+\newpage
 
 \noindent \textbf{Problem 2.} \\ 
 
@@ -153,7 +159,86 @@ fraction between $\sim$0.25 and 0.5. \\
 \noindent \textbf{Solution}\\
 
 The Metropolis-Hastings Algorithm that I wrote up to sample the given
-gaussian is included in the same folder as mcmc_sampler.py
+gaussian function is included in this repository as
+\fbox{\texttt{mcmc\_sampler.py}}
 
+The proposal density was chosen to be a Gaussian function centered
+around the current point. The width of the gaussian was found to
+affect the step size and hence the acceptance rate of the sampler. It
+was fixed by hit and trial till an acceptance rate $\sim 0.32$ was
+obtained.
+
+\begin{figure}[!h]
+  \centering \includegraphics[width=15cm]{diagnostics.png}
+  \caption{Diagnostic plots of the MCMC sampler to demostrate
+    convergence of the Markov chain. The log likelihood probability
+    distribution is sampled both at high and low probability areas, as
+    shown in panel(1). Only the first 500 samples are shown for
+    illustration. Panel(2) shows that the sampler is predominantly in
+    the high probability region around the peak of the gaussian as
+    compared to the wings.
+    \label{fig:diagnostics}}
+\end{figure}
+
+\begin{figure}[!h]
+  \centering \includegraphics[width=15cm]{dist_mcmc.png}
+  \caption{The figure shows the PDF reconstructed from the Markov
+    chain against the actual log probability distribution of the given
+    Gaussian. The sampler suceeds in reconstructing the PDF modulo a
+    normalization constant.
+    \label{fig:hist}}
+\end{figure}
+
+The Markov chain's convergence can be see from the plot of
+figure~\ref{fig:diagnostics}. The left panel shows that the walker is
+moving between high and low probability regions randomly, and the
+right panel shows that over the simulation time the walker spends more
+time in the high probability area around the peak of the gaussian as
+compared to the wings.
+
+Finally, figure~\ref{fig:hist} shows that the PDF can be reconstructed
+very accurately, modulo a normalization factor, using the MCMC
+sampler.
+
+\newpage
+
+\noindent \textbf{Problem 3.} \\ 
+
+\noindent Using a probabilistic framework, write code that fits a
+straight line (i.e., $y=mx+b$) to fake data (i.e., data points and
+error bars).  You will need to write a function that simulates fake
+data that includes Gaussian noise and an arbitrary number of
+points. \\
+
+(a) Assume true values of $m=5$, $b=-2$. Use the M-H MCMC sampler you
+wrote in problem 2 to infer the true values of $m$ and $b$ for 10,
+100, and 1000 data points.  Choose a modest amplitude for your
+uncertainties and clearly indicate your choice. For simplicity, you
+may assume top hat (`flat') priors for $m$ and $b$. Make relevant
+diagnostic plots to indicate convergence, and plot your final results
+using \texttt{corner.py}. \\
+
+(b) Repeat part (a), but replace your M-H sampler with
+\texttt{emcee}. \\
+
+\noindent \textbf{Solution}\\
+
+A program to simulate fake data with $m=5$, $b=-2$ and gaussian
+uncertainities, and then to fit this straight line using the MCMC
+sampler from the previous problem is included in this repository under
+\fbox{\texttt{fit_line.py}}
+
+The simulated fake data is shown in figure~\ref{fig:fakedata}. The
+Gaussian uncertainities were drawn from a normal distribution centered
+around zero and of width 10. 
+
+\begin{figure}[!h]
+  \centering \includegraphics[width=15cm]{dist_mcmc.png}
+  \caption{The figure shows the PDF reconstructed from the Markov
+    chain against the actual log probability distribution of the given
+    Gaussian. The sampler suceeds in reconstructing the PDF modulo a
+    normalization constant.
+    \label{fig:hist}}
+\end{figure}
 
 \end{document}
