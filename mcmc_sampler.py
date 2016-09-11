@@ -4,6 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.mlab as mlab
 import seaborn as sns
+import emcee
 
 sns.set_style("whitegrid")
 sns.set_context("notebook",font_scale=2)
@@ -42,6 +43,7 @@ def markov_chain():
         else:
             x = np.append(x,x0)
     print('Mean acceptance ratio:%f\n'%np.mean(a))
+    print('The autocorrelation time:%f\n'%emcee.autocorr.integrated_time(x))
     return x
 
 x = markov_chain()
