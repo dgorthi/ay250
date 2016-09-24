@@ -46,10 +46,15 @@ def gen_mass(N,mmin,mmax):
     #autocorrelation time. It's currently high with this method.
     pos,prob,state = sampler.run_mcmc(m0,100)
     sampler.reset()
-    sampler.run_mcmc(pos,10)
-    samples = sampler.flatchain
-    print('The autocorrelation time:%f\n'%emcee.autocorr.integrated_time(samples))
-    hist,bin_edges = np.histogram(samples,bins=100)
+    masses = np.array([])
+
+    while np.size(masses) < N:
+        sampler.run_mcmc(pos,1000)
+        samp = sampler.flatchain
+        masses = np.append(masses,samp[(samp>=0.5)&(samp<=0.8)])
+        print('The autocorrelation time:%f\n'%emcee.autocorr.integrated_time(masses))
+    
+    hist,bin_edges = np.histogram(masses[-N:-1],bins=10)
     bins = (bin_edges[:-1] + bin_edges[1:])/2
     return bins,hist
 
@@ -71,11 +76,11 @@ def mcmc(ndim,nwalkers,mass,num):
 mass,num = gen_mass(10000,0.5,0.8)
 
 theta_mcmc = mcmc(2,100,mass,num)
-num_mcmc = theta_mcmc[0] + np.log(mass)*theta_mcmc[1]
+num_mcmc = np.exp(theta_mcmc[0])*(mass**theta_mcmc[1])
 
 f,ax = plt.subplots(1,1)
-ax.plot(np.log(mass),np.log(num),'o',label='Generated Data')
-ax.plot(np.log(mass),num_mcmc,label='emcee fit')
+ax.plot(mass,num,'o',label='Generated Data')
+ax.plot(mass,num_mcmc,label='emcee fit')
 ax.legend()
 
 plt.show()

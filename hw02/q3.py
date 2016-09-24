@@ -58,9 +58,9 @@ yy_mcmc = xx*theta_mcmc[1] + theta_mcmc[0]
 
 # Plot all results
 f,ax = plt.subplots(1,1)
-ax.plot(mass,num,'r.',label='Data: Salpeter(1955)')
-ax.plot(xx,yy_mcmc,'m',label='Salpeter(\'55) Result',alpha=0.5)
-ax.plot(xx,yy_lsq,'g',label='Scipy Optimization')
+ax.plot(mass,num,'ro',label='Data: Salpeter(1955)')
+ax.plot(xx,yy_salp,'m',label='Salpeter(\'55) Result')
+ax.plot(xx,yy_lsq,'g',label='Scipy Optimization',alpha=0.8)
 ax.plot(xx,yy_mcmc,'k--',label='Emcee Optimization')
 ax.set_xlabel(r'Log(M/$M_{\odot}$)')
 ax.set_ylabel(r'Log($\xi$)')
