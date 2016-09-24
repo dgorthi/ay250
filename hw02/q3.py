@@ -21,9 +21,9 @@ def data_salpeter():
                     8.50, 8.60, 8.70, 8.83, 8.97, 9.04, 9.13, 9.20, 9.22])-10
     return mass,num
 
-def imf(alpha,mass,num):
+def imf(theta,mass,num):
     """Data is in log-space making alpha the slope of the fit."""
-    num_pred = mass*alpha[1] + alpha[0]
+    num_pred = mass*theta[1] + theta[0]
     return -np.sum((num_pred- num)**2)
 
 def optimum(mass,num):
@@ -37,8 +37,8 @@ def optimum(mass,num):
 def mcmc(ndim,nwalkers,mass,num):
     """Use emcee to fit a line to the Salpeter IMF data in log space."""
     sampler = emcee.EnsembleSampler(nwalkers, ndim, imf, args=(mass,num))
-    alpha0 = [np.random.ranf(ndim) for i in range(nwalkers)]
-    sampler.run_mcmc(alpha0,1000)
+    theta0 = [np.random.ranf(ndim) for i in range(nwalkers)]
+    sampler.run_mcmc(theta0,1000)
     c,alpha = np.percentile(sampler.chain[:,:,0],50), np.percentile(sampler.chain[:,:,1],50)
     print ("alpha from mcmc optimization is %f"%alpha)
     return c,alpha
@@ -49,12 +49,12 @@ xx=np.linspace(mass.min(),mass.max(),50)
 yy_salp = xx*(-1.35) + np.log10(0.03)
 
 # Scipy optimization
-alpha_lsq = optimum(mass,num)
-yy_lsq=xx*alpha_lsq[1] + alpha_lsq[0]
+theta_lsq = optimum(mass,num)
+yy_lsq=xx*theta_lsq[1] + theta_lsq[0]
 
 # Emcee optimization
-alpha_mcmc = mcmc(2,100,mass,num)
-yy_mcmc = xx*alpha_mcmc[1] + alpha_mcmc[0]
+theta_mcmc = mcmc(2,100,mass,num)
+yy_mcmc = xx*theta_mcmc[1] + theta_mcmc[0]
 
 # Plot all results
 f,ax = plt.subplots(1,1)

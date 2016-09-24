@@ -20,41 +20,45 @@ def imf(m,alpha):
     """
     return m**(-alpha)
 
-def lnP(theta,mass):
+def lnP(alpha,Mmax,Mmin,mass):
     """
     Return the log likelihood of the mass, given by the IMF. theta= (Mmin,Mmax,alpha)
     """    
-    Mmin,Mmax,alpha = theta[0],theta[1],theta[2]
+    #    Mmin,Mmax,alpha = theta[0],theta[1],theta[2]
+    #    print(Mmin,Mmax,alpha)
     c,err = integrate.quad(imf,Mmin,Mmax,args=alpha)
     logP = np.sum(-alpha*np.log(mass)-np.log(c))
     return logP
 
-def mcmc(ndim,nwalkers,**params):
+def mcmc(data,nwalkers,**params):
     ndim =3
-
+    mass =data
     if ('Mmin' in params.keys()):
-        Mmin = params['Mmin']
-        ndim -= 1; pos=1
+        min_mass = params['Mmin']
+        print(min_mass)
+        ndim -= 1
+        #        theta0[:,0] = min_mass
+        #        arguments.append([])
     if ('Mmax' in params.keys()):
-        Mmax = params['Mmax']
-        ndim -= 1; pos=2
+        max_mass = params['Mmax']
+        ndim -= 1
+        #        theta0[:,1] = max_mass
     if ('alpha' in params.keys()):
-        alpha = params['alpha']
-        ndim -= 1; pos=3
+        a = params['alpha']
+        ndim -= 1
+        #        theta0[:,2] = a
+        
+    theta0 = np.array([np.random.ranf(ndim) for i in range(nwalkers)])
+    print(np.shape(theta0))
+    sampler = emcee.EnsembleSampler(nwalkers,ndim,lnP,args=[3,mass])
+    return sampler.run_mcmc(theta0,100)
 
-    theta0 = [np.random.ranf(ndim) for i in range(nwalkers)]
-    if (ndim <3):
-        np.insert(theta0,pos,)
-    sampler = emcee.EnsembleSampler(nwalkers,ndim,lnP,args=[mass])
-    sampler.run_mcmc(theta0,100)
+data = random_masses(1.35,3,15,1000)
+print("Generated random values..")
 
-
-
-mass = random_masses(1.35,3,15,1000)
-
-
-#Using emcee
-ndim,nwalkers = 2,200
+nwalkers = 200
+sampler = mcmc(data,nwalkers,Mmin=3)
+print("Ran the Markov chain! Plotting now..")
 
 f1,ax1 = plt.subplots(1,1)
 ax1 = plt.hist(mass, bins=40)
