@@ -21,51 +21,40 @@ sns.set_context("notebook",font_scale=3)
 def random_masses(a,Mmin,Mmax,N=1):
     return (Mmin**(a+1)+(Mmax**(a+1)- Mmin**(a+1))*np.random.random(size=N))**(1/(a+1))
 
-def imf(m,alpha):
-    return m**(alpha)
-
-# def lnprior(theta,Mmin):
-#     Mmax,alpha = theta[0],theta[1]
-#     if (-5 < alpha < 0) and (Mmax>Mmin):
-#         return 0
-#     return -np.inf
-
-def lnP(theta,mass,num):
-    """Generates the log likelihood probability of the given parameters
-    (m,b) fitting the data, from the inverse squared deviation of the
-    fit. Assuming flat priors. Formula: P(m,b|D) = P(D|m,b)P(m|b)P(b)
+def lnprior(theta,Mmin):
+    """Imposing the known priors on theta=(Mmax,alpha). Mmax>Mmin for
+    integral to exist and alpha should be negative to keep the
+    function normalizable
 
     """
-    n_pred = theta[1]*mass +theta[0]
+    Mmax,alpha = theta[0],theta[1]
+    if (-5 < alpha < 0) and (Mmax>Mmin):
+        return 0
+    return -np.inf
+
+def lnP(theta,mass,num):
+    """The maximum likelihood function for fitting a power law is same as
+    that for fitting a line in its log-log space.
+
+    """
+    lp = lnprior(theta,3)
+    if not np.isfinite(lp):
+        return -np.inf
+    Mmax,alpha = theta[0],theta[1]
+    imf = lambda m,alpha: m**alpha
+    c,err = integrate.quad(imf,3,Mmax,args=alpha)
+    if c<=0:
+        print("lnP(): c less than zero encountered")
+        return -np.inf
+    n_pred = alpha*mass-np.log(c)
     d = norm.logpdf(num,loc=n_pred,scale=0.01)
     return np.sum(d)
 
-# def lnP(theta,mass,num):
-#     num_pred =  theta[1]*mass + theta[0]
-#     return -np.sum((num_pred- num)**2)
-
-# def lnP(theta,Mmin,mass,num):
-#     lp = lnprior(theta,Mmin)
-#     if not np.isfinite(lp):
-#         return -np.inf
-#     Mmax, alpha = theta[0],theta[1]
-#     c,err = integrate.quad(imf,Mmin,Mmax,args=alpha)
-#     if c<=0:
-#         print ("lnP(): c<0 encountered")
-#         return -np.inf
-#     n_pred = alpha*mass-np.log(c)
-#     logP = lp-np.sum((num-n_pred)**2)
-#     if np.isfinite(logP):
-#         return logP
-#     print ("lnP(): non-finite logP encountered")
-#     return -np.inf
-
 def mcmc(ndim,nwalkers,mass,num):
-    """Use emcee to fit a line to the Salpeter IMF data in log space."""
     sampler = emcee.EnsembleSampler(nwalkers, ndim, lnP, args=(mass,num))
     theta0 = np.array([np.random.ranf(ndim) for i in range(nwalkers)])
-    # theta0[:,0] = (25-5)*theta0[:,0] + 5
-    # theta0[:,1] = (-1)*theta0[:,1]
+    theta0[:,0] = (25-5)*theta0[:,0] + 5
+    theta0[:,1] = (-1)*theta0[:,1]
     pos,prob,state = sampler.run_mcmc(theta0,100)
     sampler.reset()
     sampler.run_mcmc(pos,100)
@@ -73,43 +62,35 @@ def mcmc(ndim,nwalkers,mass,num):
     # return np.percentile(sampler.flatchain[:,0],50), np.percentile(sampler.flatchain[:,1],50)
     return sampler
 
-# def mcmc(ndim,nwalkers,Mmin,mass,num):
-#     theta0 = np.empty([nwalkers,ndim],dtype=float)
-#     # theta0[:,0] = (17-13)*np.random.random(nwalkers) + 13      #Set initial M_max between 5M_sun and 25M_sun
-#     theta0[:,0] = np.random.random(nwalkers)                   #Intercept
-#     theta0[:,1] = -1*np.random.random(nwalkers) - 0.5
-#     sampler = emcee.EnsembleSampler(nwalkers,ndim,lnP,args=(mass,num))
-#     sampler.run_mcmc(theta0,200)
-#     print('mcmc(): The autocorrelation time:%f\n'%emcee.autocorr.integrated_time(sampler.flatchain[:,1]))
-#     return sampler
-
 print ("Generating data..")
-data = random_masses(-1.35,3,15,10000)
+data = random_masses(-1.35,3,15,10)
 
 # To fit for the PDF, fit a straight line to the histogram of the data
-# in log-log space.
-hist,bin_edges = np.histogram(data,bins=200)
+# in log-log space. MORAL: To fit for the right intercept the area
+# needs to be normalized under the histogram.
+hist,bin_edges = np.histogram(data,bins=3)
 bins = (bin_edges[:-1]+bin_edges[1:])/2
+hist = hist/integrate.trapz(hist,bins)
 
-ndim,nwalkers = 2,200
-sampler = mcmc(ndim,nwalkers,bins,hist)
+ndim,nwalkers = 2,300
+sampler = mcmc(ndim,nwalkers,np.log(bins),np.log(hist))
 print("Ran the Markov chain! Plotting now..")
 
-f1,ax1 = plt.subplots(1,1)
-n = ax1.hist(data,bins=100,label='Histogram of masses drawn')
-x = np.linspace(3,15,100); y = x**(-1.35); ynorm = max(n[0])*y/max(y)
-ax1.plot(x,ynorm,'r',label='Power law IMF given')
-ax1.set_xlabel(r'Mass [$M_{\odot}$]')
-ax1.set_ylabel(r'$\xi(m)$')
-ax1.legend()
+# f1,ax1 = plt.subplots(1,1)
+# n = ax1.hist(data,bins=200,label='Histogram of masses drawn')
+# x = np.linspace(3,15,100); y = x**(-1.35); ynorm = max(n[0])*y/max(y)
+# ax1.plot(x,ynorm,'r',label='Power law IMF given')
+# ax1.set_xlabel(r'Mass [$M_{\odot}$]')
+# ax1.set_ylabel(r'$\xi(m)$')
+# ax1.legend()
 
-f2,ax2 = plt.subplots(1,1)
-ax2.loglog(bins,hist,label='Histogram')
-ax2.loglog(x,ynorm,label='Given')
-ax2.set_xlabel(r'Mass [$M_{\odot}$]')
-ax2.set_ylabel(r'$\xi(m)$')
-ax2.legend()
+# f2,ax2 = plt.subplots(1,1)
+# ax2.loglog(bins,hist,label='Histogram')
+# ax2.loglog(x,ynorm,label='Given')
+# ax2.set_xlabel(r'Mass [$M_{\odot}$]')
+# ax2.set_ylabel(r'$\xi(m)$')
+# ax2.legend()
 
-# f2 = corner.corner(sampler.flatchain,labels=('M_max','alpha'),show_titles=True,truths=[15,1.35])
+f2 = corner.corner(sampler.flatchain,labels=('Mmax','alpha'),show_titles=True)
 
 plt.show()
