@@ -3,3 +3,4 @@
 *.dvi
 *.aux
 *.png
+*.ipynb_checkpoints
