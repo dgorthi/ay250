@@ -20,13 +20,18 @@ def mass(bmag,dist,N):
     """
     Mb    = bmag+5-5*np.log10(dist*1e6)
     Mberr = np.absolute(np.random.normal(loc=0,scale=0.1,size=N))
+
     bflux = 10**-((Mb+mab0)/2.5)
-    bflux_err = np.log(10)*bflux*Mberr/2.5
+    #bflux_err = np.log(10)*bflux*Mberr/2.5
+
     Lumin = bflux*4*np.pi*(10*3.086e18)**2
-    Lumin_err = bflux_err*4*np.pi*(10*3.086e18)**2
+    #Lumin_err = bflux_err*4*np.pi*(10*3.086e18)**2
+
     mass = C*Lumin
-    mass_err = C*Lumin_err
-    logmass_err = mass_err/(np.log(10)*mass)
+    #mass_err = C*Lumin_err
+
+    #logmass_err = mass_err/(np.log(10)*mass)
+    logmass_err = Mberr/2.5
     return np.log10(mass),logmass_err
 
 
@@ -124,5 +129,4 @@ ax.set_xlabel(r'$\log{Mass}$')
 ax.set_ylabel(r'$\log{SFR}$')
 ax.plot(fakemass,fakesfr,'r')
 
-plt.show()
 

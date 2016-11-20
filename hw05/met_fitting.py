@@ -91,5 +91,3 @@ ax.errorbar(met,sfr,xerr=merr,yerr=serr,fmt='o')
 ax.set_xlabel(r'Log [Metallicity]')
 ax.set_ylabel(r'Log [SFR]')
 #ax.plot(fakemet,fakesfr,'r')
-
-plt.show()

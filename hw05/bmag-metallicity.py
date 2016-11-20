@@ -27,4 +27,3 @@ ax.set_xlabel(r'$M_B$')
 ax.set_ylabel(r'$12+\log{O/H}$')
 ax.invert_xaxis()
 
-plt.show()

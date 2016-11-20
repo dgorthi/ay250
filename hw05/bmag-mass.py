@@ -91,7 +91,6 @@ ax.plot(bmag,mass,'o')
 ax.set_xlabel(r'B magnitude')
 ax.set_ylabel(r'M_{*}')
 
-plt.show()
 ## This is not a great proxy for a galaxy's stellar mass because the
 ## star formation history changes the B-band magnitude you observe
 ## even if the mass is the same for both galaxies.
