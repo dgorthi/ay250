@@ -6,6 +6,7 @@ import emcee
 import corner
 ## Compute the SFR density using observed UV luminosity functions.
 ## Parameters for z<1 taken from Arnouts et al (2005)
+## 
 ## Parameters for 2<z<4 taken from Reddy et al (2009)
 ## Parameters for z>4 taken from Bouwens et al (2015)
 
@@ -14,21 +15,21 @@ mab0  = -2.5*np.log10(3631e-23)  # AB Mag zero pt
 pccm  = 3.086e18                 # pc->cm conversion
 c     = 2.99792458e18            # Ang/s
 
-z     = np.array([0.055,  0.3,  0.5,  0.7,  1.0,  2.3, 3.05,  3.8,  4.9,  5.9,  6.8,  7.9, 10.4])
-lambd = np.array([ 1500, 1500, 1500, 1500, 1500, 1700, 1700, 1600, 1600, 1600, 1600, 1600, 1600])
+z     = np.array([0.055,  0.3,  0.5,  0.7,  1.0, 1.14, 1.75, 2.23,  2.3, 3.05,  3.8,  4.9,  5.9,  6.8,  7.9, 10.4])
+lambd = np.array([ 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1700, 1700, 1600, 1600, 1600, 1600, 1600, 1600])
 nueff = c/lambd
 
-Mstar = np.array([-18.05, -18.38, -19.49, -19.84, -20.11, -20.70, -20.97, -20.88, -21.17, -20.94, -20.87, -20.63, -20.92])
-Merr  = np.array([  0.11,   0.25,   0.37,   0.40,   0.45,   0.11,   0.14,   0.08,   0.12,   0.20,   0.26,   0.36,   0.00])
+Mstar = np.array([-18.05, -18.38, -19.49, -19.84, -20.11, -19.62, -20.24, -19.87,  -20.70, -20.97, -20.88, -21.17, -20.94, -20.87, -20.63, -20.92])
+Merr  = np.array([  0.11,   0.25,   0.37,   0.40,   0.45,   0.06,   0.32,   0.18,    0.11,   0.14,   0.08,   0.12,   0.20,   0.26,   0.36,   0.00])
 #Convert magnitude to luminosity
 Lstar = (10**-((Mstar+mab0)/2.5))*4*np.pi*(10*pccm)**2
 Lerr  = (np.log(10)/2.5)*Lstar*Merr
 
-phistar = np.array([4.07, 6.15, 1.69, 1.67, 1.14, 2.75, 1.71, 1.97, 0.74, 0.50, 0.29, 0.21, 0.008])*1e-3
-phierr  = np.array([0.56, 1.76, 0.88, 0.95, 0.76, 0.54, 0.53, 0.32, 0.16, 0.17, 0.16, 0.17, 0.003])*1e-3
+phistar = np.array([4.07, 6.15, 1.69, 1.67, 1.14, 2.96, 3.11, 3.32, 2.75, 1.71, 1.97, 0.74, 0.50, 0.29, 0.21, 0.008])*1e-3
+phierr  = np.array([0.56, 1.76, 0.88, 0.95, 0.76, 0.15, 1.61, 0.91, 0.54, 0.53, 0.32, 0.16, 0.17, 0.16, 0.17, 0.003])*1e-3
 
-alpha = np.array([-1.21, -1.19, -1.55, -1.60, -1.63, -1.73, -1.73, -1.64, -1.76, -1.87, -2.06, -2.02, -2.27])
-aerr  = np.array([ 0.07,  0.15,  0.21,  0.26,  0.45,  0.07,  0.13,  0.04,  0.05,  0.10,  0.13,  0.23,  0.00])
+alpha = np.array([-1.21, -1.19, -1.55, -1.60, -1.63, -1.48, -1.48, -1.48, -1.73, -1.73, -1.64, -1.76, -1.87, -2.06, -2.02, -2.27])
+aerr  = np.array([ 0.07,  0.15,  0.21,  0.26,  0.45,  0.62,  0.62,  0.62,  0.07,  0.13,  0.04,  0.05,  0.10,  0.13,  0.23,  0.00])
 
 def phi(L,alpha):
     return (L**(alpha+1))*np.exp(-L)
@@ -57,17 +58,11 @@ fuverr = fuvmax-fuvmin
 
 sfrerr = np.sqrt((phierr/phistar)**2 + (Lerr/Lstar)**2 + (fuverr/fuv)**2)
 
-f,ax = plt.subplots(1,1)
-ax.errorbar(z[:5], logsfr[:5], yerr=sfrerr[:5], fmt='s',label='Arnouts+05')
-ax.errorbar(z[5:7],logsfr[5:7],yerr=sfrerr[5:7],fmt='o',label='Reddy+09')
-ax.errorbar(z[7:], logsfr[7:], yerr=sfrerr[7:], fmt='p',label='Bouwens+15')
-ax.legend()
-
 ## Now fit functional form of eq(7) from Finkelstein to this SFH using
 ## the errors computed.
 
 def lnprior(theta):
-    if (-5<theta[0]<5) & (0<theta[1]<5) & (0<theta[2]<5) & (0<theta[3]<10):
+    if (0<theta[0]<5) & (2<theta[1]<4) & (0<theta[2]<10) & (0<theta[3]<10):
         return 0.0
     return -np.inf
 
@@ -79,13 +74,16 @@ def lnP(theta,sfh,sfherr,z):
     if not(np.isfinite(lp)):
         return -np.inf    
     A,B,alpha,gamma = theta
-    sfh_pred = A*(1+z)**alpha/(1+((1+z)/B)**gamma)
+    #    sfh_pred = A*(1+z)**alpha/(1+((1+z)/B)**gamma)
+    sfh_pred = np.log10(A*(1+z)**alpha/(1+((1+z)/B)**gamma))
     chi2 = ((sfh_pred-sfh)/0.3)**2
 
     return -np.sum(chi2/2)
 
 ndim,nwalkers=4,300
-sampler = emcee.EnsembleSampler(nwalkers,ndim,lnP,args=(10**(logsfr),np.log(10)*logsfr*sfrerr,z))
+#sampler = emcee.EnsembleSampler(nwalkers,ndim,lnP,args=(10**(logsfr),np.log(10)*logsfr*sfrerr,z))
+sampler = emcee.EnsembleSampler(nwalkers,ndim,lnP,args=(logsfr,sfrerr,z))
+
 
 theta0 = np.array([np.random.rand(ndim) for i in range(nwalkers)])
 # Start with the best fit values from Madau and Dickinson (eq 15)
@@ -103,9 +101,9 @@ sampler.run_mcmc(pos,1000)
 ## Diagnostic plots
 f1,(ax1,ax2,ax3,ax4)=plt.subplots(4,1)
 ax1.plot(sampler.chain[:,:,0])
-ax1.set_title(r'$B$')
+ax1.set_title(r'$A$')
 ax2.plot(sampler.chain[:,:,1])
-ax2.set_title(r'$A$')
+ax2.set_title(r'$B$')
 ax3.plot(sampler.chain[:,:,2])
 ax3.set_title(r'$\alpha$')
 ax4.plot(sampler.chain[:,:,3])
@@ -122,5 +120,23 @@ for i in range(ndim):
 
 ## Corner plot
 corner.corner(sampler.flatchain,labels=(r'$A$',r'$B$',r'$\alpha$',r'$\gamma$'),show_titles=True)#,title_fmt='.2e')
+
+A = np.percentile(sampler.flatchain[:,0],50)
+B = np.percentile(sampler.flatchain[:,1],50)
+a = np.percentile(sampler.flatchain[:,2],50)
+g = np.percentile(sampler.flatchain[:,3],50)
+sfh_theo = A*(1+z)**a/(1+((1+z)/B)**g)
+sfh_md = 0.015*(1+z)**2.7/(1+((1+z)/2.9)**5.6)
+
+## Plot result of fit
+f,ax = plt.subplots(1,1)
+ax.errorbar(z[:5], logsfr[:5], yerr=sfrerr[:5], fmt='s',label='Arnouts+05')
+ax.errorbar(z[5:8],logsfr[5:8],yerr=sfrerr[5:8],fmt='o',label='Dahlen+07')
+ax.errorbar(z[8:10],logsfr[8:10],yerr=sfrerr[8:10],fmt='D',label='Reddy+09')
+ax.errorbar(z[10:], logsfr[10:], yerr=sfrerr[10:], fmt='p',label='Bouwens+15')
+ax.plot(z,np.log10(sfh_theo),label='Best Fit')
+ax.plot(z,np.log10(sfh_md),label='MD14')
+
+ax.legend()
 
 plt.show()
