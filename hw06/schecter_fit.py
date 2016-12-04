@@ -63,52 +63,57 @@ ax.errorbar(Mz8, phiz8, yerr=errz8, fmt='o-',label=r'$z=8$' )
 ax.invert_xaxis()
 ax.legend()
     
-# def lnP(theta,M,phi,err):
-#     """ theta=(phi*, M*, alpha)"""
-#     lp = lnprior(theta)
-#     if not(np.isfinite(lp)):
-#         return -np.inf    
-#     phi_pred = 0.4*np.log(10)*theta[0]*np.power(10,0.4*(theta[2]+1)*(theta[1]-M))*np.exp(-np.power(10,0.4*(theta[1]-M)))
-#     chi2 = np.sum((phi-phi_pred)/err)/2
-#     return -chi2
-
 def lnprior(theta):
-    if (1e-7<theta[0]<1e-1) & (1e27<theta[1]<1e30) & (-2<theta[2]<0):
+    if (1e-5<theta[0]<1e-1) & (-22<theta[1]<-15) & (-2<theta[2]<0):
         return 0.0
     return -np.inf
 
-def lnP(theta,L,phi,err):
-    """ theta=(phi*,L*,alpha) """
-
+def lnP(theta,M,phi,err):
+    """ theta=(phi*, M*, alpha)"""
     lp = lnprior(theta)
     if not(np.isfinite(lp)):
-        return -np.inf
-    phi_pred = theta[0]*((L/theta[1])**theta[2])*np.exp(-L/theta[1])
+        return -np.inf    
+    phi_pred = 0.4*np.log(10)*theta[0]*np.power(10,0.4*(theta[2]+1)*(theta[1]-M))*np.exp(-np.power(10,0.4*(theta[1]-M)))
     chi2 = np.sum(((phi-phi_pred)/err)**2)/2
     return -chi2
+
+# def lnprior(theta):
+#     if (1e-7<theta[0]<1e-1) & (1e27<theta[1]<1e30) & (-3<theta[2]<0):
+#         return 0.0
+#     return -np.inf
+
+# def lnP(theta,L,phi,err):
+#     """ theta=(phi*,L*,alpha) """
+
+#     lp = lnprior(theta)
+#     if not(np.isfinite(lp)):
+#         return -np.inf
+#     phi_pred = theta[0]*((L/theta[1])**theta[2])*np.exp(-L/theta[1])
+#     chi2 = np.sum(((phi-phi_pred)/err)**2)/2
+#     return -chi2
     
-Lz4 = (10**-((Mz4+mab0)/2.5))*4*np.pi*(10*3.086e18)**2
+# Lz4 = (10**-((Mz4+mab0)/2.5))*4*np.pi*(10*3.086e18)**2
 
 ndim,nwalkers=3,300
-sampler = emcee.EnsembleSampler(nwalkers,ndim,lnP,args=(Lz4,phiz4,errz4))
+sampler = emcee.EnsembleSampler(nwalkers,ndim,lnP,args=(Mz4,phiz4,errz4))
 
 theta0 = np.array([np.random.rand(ndim) for i in range(nwalkers)])
 theta0[:,0] = (phiz4.max()-phiz4.min())*theta0[:,1]+phiz4.min()
-theta0[:,1] = (Lz4.max()-Lz4.min())*theta0[:,1]+Lz4.min()
-theta0[:,2] = (-2+1)*theta0[:,2]-1
+theta0[:,1] = (22-15)*theta0[:,1]-22
+theta0[:,2] = 2*theta0[:,2]-2
 
 # Burn-in for a bit
-pos, prob, state = sampler.run_mcmc(theta0,500)
+pos, prob, state = sampler.run_mcmc(theta0,1500)
 sampler.reset()
 
-sampler.run_mcmc(pos,1000)
+sampler.run_mcmc(pos,500)
 
 ## Diagnostic plots
 f1,(ax1,ax2,ax3)=plt.subplots(3,1)
 ax1.plot(sampler.chain[:,:,0])
 ax1.set_title(r'$\phi^*$')
 ax2.plot(sampler.chain[:,:,1])
-ax2.set_title(r'$M_*$')
+ax2.set_title(r'$L_*$')
 ax3.plot(sampler.chain[:,:,2])
 ax3.set_title(r'$\alpha$')
 
@@ -122,18 +127,24 @@ for i in range(ndim):
     plt.title("Dimension {0:d}".format(i))
 
 ## Corner plot
-corner.corner(sampler.flatchain,labels=(r'$\phi^*$',r'$M_*$',r'$\alpha$'),show_titles=True,title_fmt='.2e')
+corner.corner(sampler.flatchain,labels=(r'$\phi^*$',r'$M_*$',r'$\alpha$'),show_titles=True)#,title_fmt='.2e')
 
 ## Final parameters
 phi_star = np.percentile(sampler.flatchain[:,0],50)
-L_star = np.percentile(sampler.flatchain[:,1],50)
+M_star = np.percentile(sampler.flatchain[:,1],50)
 alpha = np.percentile(sampler.flatchain[:,2],50)
 
-#phi_pred = (np.log(10)/2.5)*phi_star*np.power(10,0.4*(M_star-Mz4)*(alpha+1))*np.exp(-np.power(10,0.4*(M_star-Mz4)))
-phi_pred = phi_star*((Lz4/L_star)**alpha)*np.exp(-(Lz4/L_star))
+phi_pred = (np.log(10)/2.5)*phi_star*np.power(10,0.4*(M_star-Mz4)*(alpha+1))*np.exp(-np.power(10,0.4*(M_star-Mz4)))
+# phi_pred = (phi_star/L_star)*((Lz4/L_star)**alpha)*np.exp(-(Lz4/L_star))
 f3,ax5 = plt.subplots(1,1)
-ax5.plot(Lz4,phi_pred,'o-',label='Best Fit')
-#ax5.set_yscale("log", nonposy='clip')
-ax5.errorbar(Lz4,phiz4,yerr=errz4,fmt='o-',label='Data')
+ax5.set_yscale("log", nonposy='clip')
+# ax5.set_xscale("log", nonposy='clip')
+ax5.plot(Mz4,phi_pred,'o-',label='Best Fit')
+ax5.errorbar(Mz4,phiz4,yerr=errz4,fmt='o-',label='Data')
+ax5.legend()
 
 plt.show()
+
+# M_star = -2.5*np.log10(L_star/(4*np.pi*(10*3.086e18)**2))-mab0
+print("Final values for z=4: phi* = %.2e    alpha = %.2f    M*=%.2f"%(phi_star,alpha,M_star))
+
