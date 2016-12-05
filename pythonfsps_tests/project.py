@@ -1,116 +1,89 @@
-import fsps
-import matplotlib.pyplot as plt
-import numpy as np
-from cycler import cycler
-from matplotlib import rc
-#rc.set_prop_cycle(cycler('color',['red','blue','green','black', 'magenta']))
+# ## This code tests the SFH parameters- sfstart, sftrunc, tau, tburst,
+# ## fburst and constant; by generating the magnitude of each CSP under
+# ## three different filters- Galex-FUV, SDSS-r, WISE-1.  As a fourth
+# ## comparision, the evolution of the stellar mass for each sfh is also
+# ## shown.
 
-#initialize Stellar Population with Kroupa IMF and Stellar metallicity
-sp = fsps.StellarPopulation(imf_type = 2, zmet = 10)
+import fsps
+import matplotlib.pyplot as pl
+import numpy as np
+# from cycler import cycler
+# from matplotlib import rc
+# rc.set_prop_cycle(cycler('color',['red','blue','green','black', 'magenta']))
+
+# Stellar Population initiliased with Kroupa IMF, solar metallicity
+# without nebular emission.  They are the default parameters- the
+# final program we have to integrate this into already defines this.
+pop = fsps.StellarPopulation(zcontinuous=1)
+default_params = dict([(k, pop.params[k]) for k in pop.params.all_params])
+#libs = pop.libraries
+
+def _reset_default_params():
+        for k in pop.params.all_params:
+                pop.params[k] = default_params[k]
+
 filters = ['wise_w1', 'sdss_r', 'galex_fuv']
-ages = sp.ssp_ages
+ages = pop.ssp_ages
 
 #create mass and magnitude dictionaries
-mass = {}
-mags = {}
+prop = {}
 
-#initialize sp with constant star formation
-sp.params['sfh'] = 1
-sp.params['const'] = 1.0
+## 1. Constant SFH
+_reset_default_params()
+pop.params['sfh'] = 1
+pop.params['const'] = 1.0
+prop[1] = np.concatenate((pop.get_mags(bands = filters), (pop.stellar_mass).reshape(np.size(ages),1)),axis=1)
 
-mags[1] = sp.get_mags(bands = filters)
-mass[1] = sp.stellar_mass
+## 2. Constant SFH between 10Myr and 10Gyr
+_reset_default_params()
+pop.params['sfh'] = 1
+pop.params['const'] = 1.0
+pop.params['sf_start'] = 0.01
+pop.params['sf_trunc'] = 10.0
+prop[2] = np.concatenate((pop.get_mags(bands = filters), (pop.stellar_mass).reshape(np.size(ages),1)),axis=1)
 
-#initialize sp with const sf and specified star formation start and truncation times
-sp.params['sf_start'] = 0.1
-sp.params['sf_trunc'] = 5.0
+## 3. Constant SFH + Burst at log-age 10.01
+_reset_default_params()
+pop.params['sfh'] = 1
+pop.params['const'] = 0.5
+pop.params['tburst'] = 10.01
+pop.params['fburst'] = 0.5
+prop[3] = np.concatenate((pop.get_mags(bands = filters), (pop.stellar_mass).reshape(np.size(ages),1)),axis=1)
 
-mags[2] = sp.get_mags(bands = filters)
-mass[2] = sp.stellar_mass
+## 4. Exponential SFH with tau= 1Gyr
+_reset_default_params()
+pop.params['sfh'] = 1
+pop.params['tau'] = 1.0
+prop[4] = np.concatenate((pop.get_mags(bands = filters), (pop.stellar_mass).reshape(np.size(ages),1)),axis=1)
 
-sp.params['sf_start'] = 0.0
-sp.params['sf_trunc'] = 0.0
-sp.params['const'] = 0.5
-sp.params['tburst'] = 10.01
-sp.params['fburst'] = 0.5
+## 5. Delayed Exponential SFH with tau= 1Gyr
+_reset_default_params()
+pop.params['sfh'] = 4
+pop.params['tau'] = 1.0
+prop[5] = np.concatenate((pop.get_mags(bands = filters), (pop.stellar_mass).reshape(np.size(ages),1)),axis=1)
 
-mags[3] = sp.get_mags(bands = filters)
-mass[3] = sp.stellar_mass
-
-sp.params['const'] = 0.0
-sp.params['tburst'] = 0.0
-sp.params['fburst'] = 0.0
-sp.params['tau'] = 1.0
-
-mags[4] = sp.get_mags(bands = filters)
-mass[4] = sp.stellar_mass
-
-sp.params['sfh'] = 4
-sp.params['tau'] = 1.0
-
-mags[5] = sp.get_mags(bands = filters)
-mass[5] = sp.stellar_mass
-
-xmin = 5.0
-xmax = 10.3
-ymin = 14.0
-ymax = 4.0
-
-
-#fig, ((ax1, ax2),(ax3, ax4)) = plt.subplots(nrows=2, ncols=2, sharex='col', sharey = 'row')
+## ---------------------------------------------------------------------------------
+##                                   Plotting stuff
+## ---------------------------------------------------------------------------------
+color= ['r','m','g','cyan','b']
 alph = 0.8
 
-filter_names = ['WISE W1', 'SDSS R', 'GALEX FUV']
-#from the internet
-#nrow = 2; ncol = 2;
-#fig, axs = plt.subplots(nrows=nrow, ncols=nrow)
+prop['name'] = ['WISE W1', 'SDSS R', 'GALEX FUV','MASS']
 
-#for ax in axs.reshape(-1):
-#  ax.set_ylabel(str(i))
+nrows=2;ncols=2
+fig, ax = pl.subplots(nrows=nrows, ncols=ncols)
+# for i in range(2):
+#         for j in range(2):
+#                 ax[i][j].set_ylim([14.0, 4.0])
+#                 ax[i][j].set_xlim([5.0, 10.3])
 
-fig, ax = plt.subplots(nrows=2, ncols=2)
+for row in range(nrows):
+        for col in range(ncols):
+                ax[row][col].set_ylabel(prop['name'][(nrows*row+col)])
+                ax[row][col].set_xlabel('log(Age[years])')
+                for sfh in range(5):
+                        ax[row][col].plot(ages, prop[sfh+1][:,(nrows*row+col)],'.',c=color[sfh])
 
-for i in range(3):
-	for j in range(5):
-		#ax[i].set_prop_cycle(cycler('color',['red','blue','green','black', 'magenta']))
-		ax[i].plot(ages, mags[j][:,i], '.', alpha = alph)
-		ax[i].plot(ages, mags[i][:,i], '.', alpha = alph)
-		ax[i].set_ylim([ymin, ymax])
-		ax[i].set_xlim([xmin,xmax])
-
-#ax1.set_xticks(size = 5)
-
-	ax[i].set_ylabel(filter_names[i])
-	ax[i].set_xlabel('log(Age[years])')
-#ax1.set_xlabel('log(Age) [years]')
-#ax1.text(left,top,'WISE W1', va = 'top', transform=ax1.transAxes)
-#ax1.annotate('WISE W1',xy=(xmax,ymax),xycoords='data',fontsize=14)
-"""
-ax2.plot(ages, mags1[:,1],'.', color = 'red', alpha = alph)
-ax2.plot(ages, mags2[:,1],'.', color = 'blue', alpha = alph)
-ax2.set_ylim([ymin,ymax])
-ax2.set_xlim([xmin,xmax])
-ax2.set_ylabel('SDSS R')
-#ax2.text(left,top,'SDSS R', va = 'top', transform=ax2.transAxes)
-
-
-ax3.plot(ages, mags1[:,2], '.', color = 'red', alpha = alph)
-ax3.plot(ages, mags2[:,2], '.', color = 'blue', alpha = alph)
-ax3.set_ylim([ymin,ymax])
-ax3.set_xlim([xmin,xmax])
-ax3.set_xlabel('log(Age[years])')
-ax3.set_ylabel('GALEX FUV')
-#ax3.text(left,top,'GALEX FUV', va = 'top', transform=ax3.transAxes)
-"""
-for i in range(5):
-	ax[4].set_prop_cycle(cycler('color',['red','blue','green','black', 'magenta']))
-	ax[4].plot(ages, mass[i], '.', alpha = alph)
-	#ax4.set_ylim([ymax,ymin])
-ax[4].set_xlabel('log(Age[years])')
-ax[4].set_ylabel('Stellar Mass')
-ax[4].set_xlim([xmin,xmax])
-	#1ax4.text(left,top,'Stellar Mass', va = 'top', transform=ax4.transAxes)
-
-plt.show()
+pl.show()
 
 
