@@ -136,7 +136,4 @@ ax.errorbar(z[8:10],logsfr[8:10],yerr=sfrerr[8:10],fmt='D',label='Reddy+09')
 ax.errorbar(z[10:], logsfr[10:], yerr=sfrerr[10:], fmt='p',label='Bouwens+15')
 ax.plot(z,np.log10(sfh_theo),label='Best Fit')
 ax.plot(z,np.log10(sfh_md),label='MD14')
-
 ax.legend()
-
-plt.show()

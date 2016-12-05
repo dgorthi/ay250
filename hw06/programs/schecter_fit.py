@@ -143,8 +143,6 @@ ax5.plot(Mz4,phi_pred,'o-',label='Best Fit')
 ax5.errorbar(Mz4,phiz4,yerr=errz4,fmt='o-',label='Data')
 ax5.legend()
 
-plt.show()
-
 # M_star = -2.5*np.log10(L_star/(4*np.pi*(10*3.086e18)**2))-mab0
 print("Final values for z=4: phi* = %.2e    alpha = %.2f    M*=%.2f"%(phi_star,alpha,M_star))
 
